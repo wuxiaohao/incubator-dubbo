@@ -21,13 +21,31 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class Consumer {
 
+    private Consumer(){}
+
+    private static ClassPathXmlApplicationContext context = null;
+
+    public static ClassPathXmlApplicationContext getContext() {
+        if (context == null) {
+            synchronized (Consumer.class) {
+                if (context == null) {
+                    context = new ClassPathXmlApplicationContext("classpath*:META-INF/spring/dubbo-demo-consumer.xml");
+                    context.start();
+                }
+            }
+        }
+        return context;
+    }
+
+    public static void stop() {
+        if (context != null) {
+            context.stop();
+        }
+    }
+
     public static void main(String[] args) {
-        //Prevent to get IPV6 address,this way only work in debug mode
-        //But you can pass use -Djava.net.preferIPv4Stack=true,then it work well whether in debug mode or not
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-consumer.xml"});
-        context.start();
-        DemoService demoService = (DemoService) context.getBean("demoService"); // get remote service proxy
+
+        DemoService demoService = getContext().getBean(DemoService.class);
 
         while (true) {
             try {
@@ -38,8 +56,6 @@ public class Consumer {
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }
-
-
         }
 
     }
